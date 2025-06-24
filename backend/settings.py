@@ -88,6 +88,7 @@ DATABASES = {
         # Replace this value with your local database's connection string.
         default=os.environ.get("DATABASE_URL"),
         conn_max_age=600,
+        ssl_require=True,  # enforce SSL in production
     )
 }
 
@@ -148,3 +149,6 @@ import os
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 TWILIO_VERIFY_SID = os.getenv("TWILIO_VERIFY_SID")
+
+
+ALLOWED_HOSTS = ["*"]
