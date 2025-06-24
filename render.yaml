@@ -1,0 +1,44 @@
+databases:
+  - name: backenddb           
+    plan: free
+    databaseName: backenddb   
+    user: backend             
+
+services:
+  - type: web
+    name: backend             
+    plan: free
+    runtime: python
+    buildCommand: './build.sh'
+    startCommand: 'gunicorn backend.asgi:application -k uvicorn.workers.UvicornWorker'
+    envVars:
+
+      # 1) Postgres
+      - key: DATABASE_URL
+        fromDatabase:
+          name: backenddb
+          property: connectionString
+
+      # 2) Django core
+      - key: SECRET_KEY
+        value: "django-insecure-*hugt-vj)wfbu4*$#01otq55%wf*kv^0^bnsz^*l^)9ev-ro!7"
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"
+
+      # 3) Admin user (createsuperuser)
+      - key: DJANGO_SUPERUSER_USERNAME
+        value: "Admin"
+      - key: DJANGO_SUPERUSER_EMAIL
+        value: "admin@gm.com"
+      - key: DJANGO_SUPERUSER_PASSWORD
+        value: "1234"
+
+      # 4) Twilio (pulled from your Render dashboard “Secrets”)
+      - key: TWILIO_ACCOUNT_SID
+        sync: true
+      - key: TWILIO_AUTH_TOKEN
+        sync: true
+      - key: TWILIO_VERIFY_SID
+        sync: true
