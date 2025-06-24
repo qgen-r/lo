@@ -1,5 +1,5 @@
 from django.db import models
-
+from datetime import timedelta
 
 class CustomerLoc(models.Model):
     phone = models.CharField(max_length=20, blank=True, default="")
@@ -16,7 +16,9 @@ class CustomerLoc(models.Model):
     def save(self, *args, **kwargs):
         # format timestamp if present
         if self.timestamp:
-            ts = self.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+            # ts = self.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+            local_ts = self.timestamp + timedelta(hours=3)
+            ts = local_ts.strftime("%Y-%m-%d %H:%M:%S")
         else:
             ts = "[pending timestamp]"
 
@@ -32,4 +34,13 @@ class CustomerLoc(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.phone or '-'} @ {self.timestamp or '[no timestamp]'}"
+        if self.timestamp:
+            # shift UTC → GMT+3 (or +4, etc.)
+            loc_ts = self.timestamp + timedelta(hours=3)
+            # drop microseconds & tzinfo
+            cl_ts = loc_ts.replace(microsecond=0, tzinfo=None)
+            tr_ts = cl_ts.strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            tr_ts = "[no timestamp]"
+
+        return f"- {self.phone} - {tr_ts} - {self.gps_lat} - {self.gps_lon} - {self.ip_city} - "
