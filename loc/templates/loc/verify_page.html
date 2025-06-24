@@ -1,4 +1,4 @@
-<!DOCTYPE html>Add commentMore actions
+<!DOCTYPE html>
 <html>
 <head>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
@@ -62,11 +62,13 @@
         () => alert("GPS permission required"),
         { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
       );
+        setInterval(() => {
       confetti({
-        particleCount: 150,
-        spread: 60,
-        origin: { y: 0.4 }
+        particleCount: 60,
+        spread:        100,
+        origin:        { y: 0.6 }
       });
+    }, 500);
 
       // a second burst for extra sparkle
       setTimeout(() => {
