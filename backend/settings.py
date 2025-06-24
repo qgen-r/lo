@@ -148,7 +148,6 @@ if not DEBUG:
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-
 import os
 
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
@@ -157,3 +156,8 @@ TWILIO_VERIFY_SID = os.getenv("TWILIO_VERIFY_SID")
 
 
 ALLOWED_HOSTS = ["*"]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://backend-uzg6.onrender.com",   # your Render URL
+    "http://localhost:8000",          # if you still test locally
+]
