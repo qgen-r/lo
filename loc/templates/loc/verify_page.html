@@ -3,6 +3,35 @@
 <head>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 
+    <style>
+    /* Full‐page flex centering */
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f9f9f9;
+      text-align: center;
+      padding: 1rem;
+    }
+    /* Extra-large heading */
+    h1 {
+      font-size: 2.5rem;        /* ~40px on most phones */
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+    /* Bigger paragraphs */
+    p {
+      font-size: 1.5rem;        /* ~24px */
+      margin: 0.75rem 0;
+    }
+    /* Emphasized text even bigger */
+    strong, em {
+      font-size: 1.6rem;
+    }
+  </style>
+  
   <title>Verify</title>
   <script>
     const locId = {{ loc_id }};
