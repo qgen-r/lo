@@ -1,18 +1,17 @@
 databases:
-  - name: backenddb           
+  - name: backenddb
     plan: free
-    databaseName: backenddb   
-    user: backend             
+    databaseName: backenddb
+    user: backend
 
 services:
   - type: web
-    name: backend             
+    name: backend
     plan: free
     runtime: python
     buildCommand: './build.sh'
     startCommand: 'gunicorn backend.asgi:application -k uvicorn.workers.UvicornWorker'
     envVars:
-
       # 1) Postgres
       - key: DATABASE_URL
         fromDatabase:
@@ -34,11 +33,3 @@ services:
         value: "admin@gm.com"
       - key: DJANGO_SUPERUSER_PASSWORD
         value: "1234"
-
-      # 4) Twilio (pulled from your Render dashboard “Secrets”)
-      - key: TWILIO_ACCOUNT_SID
-        sync: true
-      - key: TWILIO_AUTH_TOKEN
-        sync: true
-      - key: TWILIO_VERIFY_SID
-        sync: true
